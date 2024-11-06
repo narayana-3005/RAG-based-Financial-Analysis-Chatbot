@@ -1,0 +1,48 @@
+stages:
+  fetch_stock_data:
+    cmd: python fetch_stock_data.py
+    deps:
+      - fetch_stock_data.py
+    outs:
+      - data/stock_prices
+
+  preprocess_stock_data:
+    cmd: python preprocess_stock_data.py
+    deps:
+      - preprocess_stock_data.py
+      - data/stock_prices
+    outs:
+      - data/processed_stock_prices
+
+  validate_stock_data:
+    cmd: python validate_stock_data.py
+    deps:
+      - validate_stock_data.py
+      - data/processed_stock_prices
+      - schemas/stock_data_schema.json
+    outs:
+      - data/validated_stock_prices
+
+  fetch_news_articles:
+    cmd: python fetch_news_articles.py
+    deps:
+      - fetch_news_articles.py
+    outs:
+      - data/news_articles
+
+  preprocess_news_articles:
+    cmd: python preprocess_news_articles.py
+    deps:
+      - preprocess_news_articles.py
+      - data/news_articles
+    outs:
+      - data/processed_news_articles
+
+  validate_news_articles:
+    cmd: python validate_news_articles.py
+    deps:
+      - validate_news_articles.py
+      - data/processed_news_articles
+      - schemas/news_data_schema.json
+    outs:
+      - data/validated_news_articles
