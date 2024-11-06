@@ -1,0 +1,10 @@
+llama-index-embeddings-vertex
+llama-index-llms-vertex
+llama-index-vector_stores-vertexaivectorsearch
+llama-index-llms-langchain
+llama-index-llms-fireworks
+google-cloud-aiplatform
+google-auth-httplib2
+google-auth-oauthlib
+llama-index
+pinecone-client
