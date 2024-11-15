@@ -8,3 +8,7 @@ google-auth-httplib2
 google-auth-oauthlib
 llama-index
 pinecone-client
+transformers
+datasets
+faiss-cpu 
+google-cloud-storage

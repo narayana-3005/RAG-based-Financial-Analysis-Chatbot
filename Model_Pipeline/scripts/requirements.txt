@@ -1,0 +1,4 @@
+transformers
+datasets
+faiss-cpu 
+google-cloud-storage
