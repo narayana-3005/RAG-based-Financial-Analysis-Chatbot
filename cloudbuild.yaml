@@ -1,0 +1,154 @@
+# cloudbuild.yaml for RAG-based Financial Analysis Chatbot MLOps pipeline
+
+steps:
+  # Step 1: Set up the environment
+  - name: 'gcr.io/cloud-builders/gcloud'
+    entrypoint: 'bash'
+    args:
+      - '-c'
+      - |
+        python3 -m venv /workspace/venv
+        . /workspace/venv/bin/activate
+        pip install -r requirements.txt  # Ensure requirements.txt is in your repo
+
+  # Step 2: Fetch and preprocess data from GCS
+  - name: 'python'
+    entrypoint: 'bash'
+    args:
+      - '-c'
+      - |
+        . /workspace/venv/bin/activate
+        python -c "
+import os
+from google.cloud import storage
+import pandas as pd
+
+# Initialize GCS client
+client = storage.Client()
+
+# Define bucket names
+buckets = {
+    'stock_data': 'stock_prices-bucket',
+    'news_data': 'news_articles-bucket',
+    'preprocessed_stock': 'stock_prices-bucket_preprocessed',
+    'preprocessed_news': 'news_article-bucket_preprocessed'
+}
+
+# Function to download and preprocess data from GCS
+def fetch_and_preprocess(bucket_name, output_file):
+    bucket = client.get_bucket(bucket_name)
+    blobs = bucket.list_blobs()
+    os.makedirs('data', exist_ok=True)
+    
+    # Download and concatenate parquet files
+    data_frames = []
+    for blob in blobs:
+        if blob.name.endswith('.parquet'):
+            local_path = f'data/{os.path.basename(blob.name)}'
+            blob.download_to_filename(local_path)
+            df = pd.read_parquet(local_path)
+            data_frames.append(df)
+    combined_df = pd.concat(data_frames, ignore_index=True)
+    combined_df.to_parquet(f'data/{output_file}')
+
+# Fetch stock and news data
+fetch_and_preprocess(buckets['stock_data'], 'processed_stock_data.parquet')
+fetch_and_preprocess(buckets['news_data'], 'processed_news_data.parquet')
+        "
+
+  # Step 3: Call Cloud Run functions for additional data processing
+  - name: 'curlimages/curl'
+    entrypoint: 'curl'
+    args:
+      - '-X'
+      - 'POST'
+      - '-H'
+      - 'Content-Type: application/json'
+      - '-d'
+      - '{}'
+      - 'https://us-east1-theta-function-429605-j0.cloudfunctions.net/fetch_stock_data'
+
+  - name: 'curlimages/curl'
+    entrypoint: 'curl'
+    args:
+      - '-X'
+      - 'POST'
+      - '-H'
+      - 'Content-Type: application/json'
+      - '-d'
+      - '{}'
+      - 'https://us-east1-theta-function-429605-j0.cloudfunctions.net/news_article_ingestion'
+
+  - name: 'curlimages/curl'
+    entrypoint: 'curl'
+    args:
+      - '-X'
+      - 'POST'
+      - '-H'
+      - 'Content-Type: application/json'
+      - '-d'
+      - '{}'
+      - 'https://us-east1-theta-function-429605-j0.cloudfunctions.net/news_articles_preprocessing'
+
+  - name: 'curlimages/curl'
+    entrypoint: 'curl'
+    args:
+      - '-X'
+      - 'POST'
+      - '-H'
+      - 'Content-Type: application/json'
+      - '-d'
+      - '{}'
+      - 'https://us-east1-theta-function-429605-j0.cloudfunctions.net/preprocess_stock_data'
+
+  # Step 4: Model Training and Evaluation with MLflow
+  - name: 'python'
+    entrypoint: 'bash'
+    args:
+      - '-c'
+      - |
+        . /workspace/venv/bin/activate
+        python -c "
+import mlflow
+import pandas as pd
+
+# Load processed data
+stock_data = pd.read_parquet('data/processed_stock_data.parquet')
+news_data = pd.read_parquet('data/processed_news_data.parquet')
+
+# MLflow experiment tracking
+mlflow.set_experiment('RAG-based Financial Chatbot')
+
+with mlflow.start_run():
+    # Model training placeholder (replace with actual training function)
+    # model = train_rag_model(stock_data, news_data)
+    
+    # Log metrics and artifacts
+    mlflow.log_param('model_type', 'RAG-based')
+    mlflow.log_metric('accuracy', 0.85)  # Replace with actual metric
+    # mlflow.sklearn.log_model(model, 'rag_model')  # Save model artifact if applicable
+        "
+
+  # Step 5: Deploy the model to Cloud Run
+  - name: 'gcr.io/cloud-builders/gcloud'
+    args:
+      - 'run'
+      - 'deploy'
+      - 'rag-financial-chatbot'  # Replace with your Cloud Run service name
+      - '--source'
+      - '.'
+      - '--region'
+      - 'us-east1'  # Adjust region as needed
+      - '--allow-unauthenticated'
+      - '--platform'
+      - 'managed'
+      - '--set-env-vars'
+      - 'GCS_BUCKET=your-bucket-name'  # Pass environment variables if needed for Cloud Run
+
+# Optional: Artifact storage
+artifacts:
+  objects:
+    location: 'gs://us-east1-docker.pkg.dev/theta-function-429605-j0/rag-artifacts'  # Replace with your GCS bucket for storing artifacts
+    paths:
+      - 'data/processed_stock_data.parquet'
+      - 'data/processed_news_data.parquet'
