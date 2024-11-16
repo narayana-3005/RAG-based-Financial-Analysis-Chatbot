@@ -1,1 +1,5 @@
-scripts folder for the prjoect in data pipeline
+google-cloud-storage
+pandas
+pyarrow
+fastparquet
+flask
