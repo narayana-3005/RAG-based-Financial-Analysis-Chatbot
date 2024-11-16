@@ -162,3 +162,272 @@ for query in queries:
     answer = generate_answer(query, retrieved_docs)
     print('Query: ', query)
     print("Answer:", answer)
+
+import torch
+from transformers import DPRContextEncoder, DPRQuestionEncoder, DPRReader, DPRReaderTokenizer, TrainingArguments, Trainer
+from datasets import Dataset
+import numpy as np
+# ... (rest of your existing code for initialization, FAISS, etc.)
+
+# Example training data (small dataset)
+training_data = [
+    {"question": "What is the capital of France?", "context": "The capital of France is Paris.", "answer": "Paris"},
+    {"question": "Who designed the Eiffel Tower?", "context": "The Eiffel Tower was named after the engineer Gustave Eiffel, whose company designed and built the tower.", "answer": "Gustave Eiffel"},
+    {"question": "What is Python?", "context": "Python is a high-level, interpreted programming language.", "answer": "a high-level, interpreted programming language"},
+    {"question": "Where is the Amazon rainforest?", "context": "The Amazon rainforest is a large tropical rainforest in South America.", "answer": "South America"}
+]
+
+# Example training data (small dataset)
+eval_data = [
+    {"question": "What is the capital of France?", "context": "The capital of France is Paris.", "answer": "Paris"},
+    {"question": "Who designed the Eiffel Tower?", "context": "The Eiffel Tower was named after the engineer Gustave Eiffel, whose company designed and built the tower.", "answer": "Gustave Eiffel"},
+]
+# Convert the training data to a Hugging Face Dataset
+train_dataset = Dataset.from_list(training_data)
+eval_dataset = Dataset.from_list(eval_data)
+
+# Function to prepare training data
+def prepare_train_features(examples):
+    tokenized_examples = reader_tokenizer(
+        examples["question"],
+        examples["context"],
+        truncation=True,
+        padding="max_length",
+        max_length=512,
+        return_tensors="pt",
+    )
+    # Add start and end positions of the answer
+    start_positions = []
+    end_positions = []
+    for i in range(len(examples['question'])):
+      answer_start = examples['context'][i].find(examples['answer'][i])
+      answer_end = answer_start + len(examples['answer'][i])
+      start_positions.append(answer_start)
+      end_positions.append(answer_end)
+
+    tokenized_examples["start_positions"] = start_positions
+    tokenized_examples["end_positions"] = end_positions
+    return tokenized_examples
+
+# Prepare the training dataset
+train_dataset = train_dataset.map(prepare_train_features, batched=True)
+eval_dataset = eval_dataset.map(prepare_train_features, batched=True)
+
+
+
+
+
+
+
+
+
+import torch
+from transformers import DPRReader, DPRReaderTokenizerFast, AdamW
+from datasets import Dataset
+from torch.utils.data import DataLoader
+from tqdm import tqdm
+
+# Initialize the model and tokenizer
+reader_model = DPRReader.from_pretrained("facebook/dpr-reader-single-nq-base")
+reader_tokenizer = DPRReaderTokenizerFast.from_pretrained("facebook/dpr-reader-single-nq-base")
+
+# Example training and evaluation data
+training_data = [
+    {"question": "What is the capital of France?", "context": "The capital of France is Paris.", "answer": "Paris"},
+    {"question": "Who designed the Eiffel Tower?", "context": "The Eiffel Tower was named after the engineer Gustave Eiffel, whose company designed and built the tower.", "answer": "Gustave Eiffel"},
+]
+
+eval_data = [
+    {"question": "What is the capital of France?", "context": "The capital of France is Paris.", "answer": "Paris"},
+    {"question": "Who designed the Eiffel Tower?", "context": "The Eiffel Tower was named after the engineer Gustave Eiffel, whose company designed and built the tower.", "answer": "Gustave Eiffel"},
+]
+
+# Prepare training features
+def prepare_train_features(example):
+    tokenized_example = reader_tokenizer(
+        example["question"],
+        example["context"],
+        truncation=True,
+        padding="max_length",
+        max_length=512,
+    )
+
+    answer_start = example['context'].find(example['answer'])
+    answer_end = answer_start + len(example['answer'])
+
+    start_positions = tokenized_example.char_to_token(0, answer_start)
+    end_positions = tokenized_example.char_to_token(0, answer_end - 1)
+
+    if start_positions is None or end_positions is None:
+        start_positions = 0
+        end_positions = 0
+
+    tokenized_example["start_positions"] = start_positions
+    tokenized_example["end_positions"] = end_positions
+    return tokenized_example
+
+# Convert data to Dataset and map features
+train_dataset = Dataset.from_list(training_data)
+eval_dataset = Dataset.from_list(eval_data)
+
+train_dataset = train_dataset.map(prepare_train_features, remove_columns=train_dataset.column_names)
+eval_dataset = eval_dataset.map(prepare_train_features, remove_columns=eval_dataset.column_names)
+
+# Custom data collator to convert batch items to tensors
+def custom_collate_fn(batch):
+    return {key: torch.tensor([item[key] for item in batch]) for key in batch[0]}
+
+# Define DataLoader with custom collator
+train_dataloader = DataLoader(train_dataset, batch_size=2, shuffle=True, collate_fn=custom_collate_fn)
+eval_dataloader = DataLoader(eval_dataset, batch_size=2, collate_fn=custom_collate_fn)
+
+# Set up optimizer
+optimizer = AdamW(reader_model.parameters(), lr=5e-5)
+
+# Training Loop
+num_epochs = 3
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+reader_model.to(device)
+
+for epoch in range(num_epochs):
+    reader_model.train()
+    total_loss = 0
+    for batch in tqdm(train_dataloader, desc=f"Training Epoch {epoch+1}"):
+        # Move batch to device
+        input_ids = batch["input_ids"].to(device)
+        attention_mask = batch["attention_mask"].to(device)
+        start_positions = batch["start_positions"].to(device)
+        end_positions = batch["end_positions"].to(device)
+
+        # Forward pass (without start_positions and end_positions)
+        outputs = reader_model(
+            input_ids=input_ids,
+            attention_mask=attention_mask,
+        )
+        start_logits = outputs.start_logits
+        end_logits = outputs.end_logits
+
+        # Compute loss manually
+        start_loss = torch.nn.functional.cross_entropy(start_logits, start_positions)
+        end_loss = torch.nn.functional.cross_entropy(end_logits, end_positions)
+        loss = (start_loss + end_loss) / 2
+        total_loss += loss.item()
+
+        # Backward pass and optimization step
+        optimizer.zero_grad()
+        loss.backward()
+        optimizer.step()
+
+    avg_loss = total_loss / len(train_dataloader)
+    print(f"Epoch {epoch+1} - Average Loss: {avg_loss}")
+
+# Save the fine-tuned model
+reader_model.save_pretrained("./my_fine_tuned_dpr_reader")
+reader_tokenizer.save_pretrained("./my_fine_tuned_dpr_reader")
+
+import torch
+from sklearn.metrics import accuracy_score
+from transformers import DPRReader, DPRReaderTokenizerFast
+from datasets import Dataset
+from torch.utils.data import DataLoader
+from tqdm import tqdm
+
+# Assume the model is already fine-tuned and saved
+# Load the fine-tuned model and tokenizer
+reader_model = DPRReader.from_pretrained("./my_fine_tuned_dpr_reader")
+reader_tokenizer = DPRReaderTokenizerFast.from_pretrained("./my_fine_tuned_dpr_reader")
+
+# Validation data - Ensure it includes questions, contexts, and expected answers
+validation_data = [
+    {"question": "What is the capital of France?", "context": "The capital of France is Paris.", "answer": "Paris"},
+    {"question": "Who designed the Eiffel Tower?", "context": "The Eiffel Tower was named after the engineer Gustave Eiffel, whose company designed and built the tower.", "answer": "Gustave Eiffel"},
+]
+
+# Prepare validation features
+def prepare_validation_features(example):
+    tokenized_example = reader_tokenizer(
+        example["question"],
+        example["context"],
+        truncation=True,
+        padding="max_length",
+        max_length=512,
+    )
+
+    answer_start = example['context'].find(example['answer'])
+    answer_end = answer_start + len(example['answer'])
+
+    start_positions = tokenized_example.char_to_token(0, answer_start)
+    end_positions = tokenized_example.char_to_token(0, answer_end - 1)
+
+    if start_positions is None or end_positions is None:
+        start_positions = 0
+        end_positions = 0
+
+    tokenized_example["start_positions"] = start_positions
+    tokenized_example["end_positions"] = end_positions
+    return tokenized_example
+
+# Convert validation data to Dataset and map features
+val_dataset = Dataset.from_list(validation_data)
+val_dataset = val_dataset.map(prepare_validation_features, remove_columns=val_dataset.column_names)
+
+# Custom data collator to convert batch items to tensors
+def custom_collate_fn(batch):
+    return {key: torch.tensor([item[key] for item in batch]) for key in batch[0]}
+
+# Define DataLoader with custom collator
+val_dataloader = DataLoader(val_dataset, batch_size=2, collate_fn=custom_collate_fn)
+
+# Validation Loop
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+reader_model.to(device)
+reader_model.eval()
+
+total_val_loss = 0
+all_start_preds = []
+all_end_preds = []
+all_start_labels = []
+all_end_labels = []
+
+with torch.no_grad():
+    for batch in tqdm(val_dataloader, desc="Validation"):
+        # Move batch to device
+        input_ids = batch["input_ids"].to(device)
+        attention_mask = batch["attention_mask"].to(device)
+        start_positions = batch["start_positions"].to(device)
+        end_positions = batch["end_positions"].to(device)
+
+        # Forward pass to get logits
+        outputs = reader_model(
+            input_ids=input_ids,
+            attention_mask=attention_mask,
+        )
+        start_logits = outputs.start_logits
+        end_logits = outputs.end_logits
+
+        # Compute validation loss
+        start_loss = torch.nn.functional.cross_entropy(start_logits, start_positions)
+        end_loss = torch.nn.functional.cross_entropy(end_logits, end_positions)
+        loss = (start_loss + end_loss) / 2
+        total_val_loss += loss.item()
+
+        # Calculate predictions
+        start_preds = torch.argmax(start_logits, dim=1)
+        end_preds = torch.argmax(end_logits, dim=1)
+
+        # Store predictions and actual labels
+        all_start_preds.extend(start_preds.cpu().tolist())
+        all_end_preds.extend(end_preds.cpu().tolist())
+        all_start_labels.extend(start_positions.cpu().tolist())
+        all_end_labels.extend(end_positions.cpu().tolist())
+
+# Calculate average validation loss
+avg_val_loss = total_val_loss / len(val_dataloader)
+print(f"Validation Loss: {avg_val_loss}")
+
+# Calculate accuracy for start and end positions
+start_accuracy = accuracy_score(all_start_labels, all_start_preds)
+end_accuracy = accuracy_score(all_end_labels, all_end_preds)
+print(f"Start Position Accuracy: {start_accuracy * 100:.2f}%")
+print(f"End Position Accuracy: {end_accuracy * 100:.2f}%")
+
