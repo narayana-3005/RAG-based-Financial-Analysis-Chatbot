@@ -1,154 +1,91 @@
-# cloudbuild.yaml for RAG-based Financial Analysis Chatbot MLOps pipeline
-
 steps:
-  # Step 1: Set up the environment
+  # Step 1: Set up the Python environment and install dependencies
+  - name: 'python:3.9'
+    id: 'Install Dependencies'
+    entrypoint: 'bash'
+    args:
+      - '-c'
+      - |
+        pip install -r requirements.txt
+        pip install mlflow google-cloud-storage
+
+  # Step 2: Retrieve raw data from GCP bucket
+  - name: 'google/cloud-sdk:slim'
+    id: 'Retrieve Data'
+    entrypoint: 'bash'
+    args:
+      - '-c'
+      - |
+        gsutil cp gs://stock_prices_bucket/*.parquet ./data/
+        gsutil cp gs://news_articles_bucket/*.parquet ./data/
+
+  # Step 3: Preprocess data using scripts from Data-Pipeline
+  - name: 'python:3.9'
+    id: 'Preprocess Data'
+    entrypoint: 'python'
+    args:
+      - 'Data-Pipeline/scripts/preprocess.py'
+
+  # Step 4: Train the model
+  - name: 'python:3.9'
+    id: 'Train Model'
+    entrypoint: 'python'
+    args:
+      - 'Model_Pipeline/ml_ops_model.py'
+
+  # Step 5: Run bias detection
+  - name: 'python:3.9'
+    id: 'Bias Detection'
+    entrypoint: 'python'
+    args:
+      - 'Model_Pipeline/bias_detection.py'
+
+  # Step 6: Log results and metrics to MLflow
+  - name: 'python:3.9'
+    id: 'Log to MLflow'
+    entrypoint: 'bash'
+    args:
+      - '-c'
+      - |
+        export MLFLOW_TRACKING_URI='http://127.0.0.1:5001'
+        python Model_Pipeline/log_to_mlflow.py
+
+  # Step 7: Store the best model in GCP bucket
+  - name: 'google/cloud-sdk:slim'
+    id: 'Store Best Model'
+    entrypoint: 'bash'
+    args:
+      - '-c'
+      - |
+        gsutil cp ./Model_Pipeline/models/best_model.pkl gs://mlflow_connection_bucket
+
+  # Step 8: Run tests for model validation
+  - name: 'python:3.9'
+    id: 'Run Tests'
+    entrypoint: 'python'
+    args:
+      - 'tests/test_model.py'
+
+  # Step 9: Deploy the application to Cloud Run
   - name: 'gcr.io/cloud-builders/gcloud'
-    entrypoint: 'bash'
-    args:
-      - '-c'
-      - |
-        python3 -m venv /workspace/venv
-        . /workspace/venv/bin/activate
-        pip install -r requirements.txt  # Ensure requirements.txt is in your repo
-
-  # Step 2: Fetch and preprocess data from GCS
-  - name: 'python'
-    entrypoint: 'bash'
-    args:
-      - '-c'
-      - |
-        . /workspace/venv/bin/activate
-        python -c "
-import os
-from google.cloud import storage
-import pandas as pd
-
-# Initialize GCS client
-client = storage.Client()
-
-# Define bucket names
-buckets = {
-    'stock_data': 'stock_prices-bucket',
-    'news_data': 'news_articles-bucket',
-    'preprocessed_stock': 'stock_prices-bucket_preprocessed',
-    'preprocessed_news': 'news_article-bucket_preprocessed'
-}
-
-# Function to download and preprocess data from GCS
-def fetch_and_preprocess(bucket_name, output_file):
-    bucket = client.get_bucket(bucket_name)
-    blobs = bucket.list_blobs()
-    os.makedirs('data', exist_ok=True)
-    
-    # Download and concatenate parquet files
-    data_frames = []
-    for blob in blobs:
-        if blob.name.endswith('.parquet'):
-            local_path = f'data/{os.path.basename(blob.name)}'
-            blob.download_to_filename(local_path)
-            df = pd.read_parquet(local_path)
-            data_frames.append(df)
-    combined_df = pd.concat(data_frames, ignore_index=True)
-    combined_df.to_parquet(f'data/{output_file}')
-
-# Fetch stock and news data
-fetch_and_preprocess(buckets['stock_data'], 'processed_stock_data.parquet')
-fetch_and_preprocess(buckets['news_data'], 'processed_news_data.parquet')
-        "
-
-  # Step 3: Call Cloud Run functions for additional data processing
-  - name: 'curlimages/curl'
-    entrypoint: 'curl'
-    args:
-      - '-X'
-      - 'POST'
-      - '-H'
-      - 'Content-Type: application/json'
-      - '-d'
-      - '{}'
-      - 'https://us-east1-theta-function-429605-j0.cloudfunctions.net/fetch_stock_data'
-
-  - name: 'curlimages/curl'
-    entrypoint: 'curl'
-    args:
-      - '-X'
-      - 'POST'
-      - '-H'
-      - 'Content-Type: application/json'
-      - '-d'
-      - '{}'
-      - 'https://us-east1-theta-function-429605-j0.cloudfunctions.net/news_article_ingestion'
-
-  - name: 'curlimages/curl'
-    entrypoint: 'curl'
-    args:
-      - '-X'
-      - 'POST'
-      - '-H'
-      - 'Content-Type: application/json'
-      - '-d'
-      - '{}'
-      - 'https://us-east1-theta-function-429605-j0.cloudfunctions.net/news_articles_preprocessing'
-
-  - name: 'curlimages/curl'
-    entrypoint: 'curl'
-    args:
-      - '-X'
-      - 'POST'
-      - '-H'
-      - 'Content-Type: application/json'
-      - '-d'
-      - '{}'
-      - 'https://us-east1-theta-function-429605-j0.cloudfunctions.net/preprocess_stock_data'
-
-  # Step 4: Model Training and Evaluation with MLflow
-  - name: 'python'
-    entrypoint: 'bash'
-    args:
-      - '-c'
-      - |
-        . /workspace/venv/bin/activate
-        python -c "
-import mlflow
-import pandas as pd
-
-# Load processed data
-stock_data = pd.read_parquet('data/processed_stock_data.parquet')
-news_data = pd.read_parquet('data/processed_news_data.parquet')
-
-# MLflow experiment tracking
-mlflow.set_experiment('RAG-based Financial Chatbot')
-
-with mlflow.start_run():
-    # Model training placeholder (replace with actual training function)
-    # model = train_rag_model(stock_data, news_data)
-    
-    # Log metrics and artifacts
-    mlflow.log_param('model_type', 'RAG-based')
-    mlflow.log_metric('accuracy', 0.85)  # Replace with actual metric
-    # mlflow.sklearn.log_model(model, 'rag_model')  # Save model artifact if applicable
-        "
-
-  # Step 5: Deploy the model to Cloud Run
-  - name: 'gcr.io/cloud-builders/gcloud'
+    id: 'Deploy to Cloud Run'
     args:
       - 'run'
       - 'deploy'
-      - 'rag-financial-chatbot'  # Replace with your Cloud Run service name
-      - '--source'
-      - '.'
-      - '--region'
-      - 'us-east1'  # Adjust region as needed
+      - 'rag-financial-chatbot'
+      - '--source=.'
+      - '--platform=managed'
+      - '--region=us-central1'
       - '--allow-unauthenticated'
-      - '--platform'
-      - 'managed'
-      - '--set-env-vars'
-      - 'GCS_BUCKET=your-bucket-name'  # Pass environment variables if needed for Cloud Run
 
-# Optional: Artifact storage
+timeout: '1800s'
+
 artifacts:
   objects:
-    location: 'gs://us-east1-docker.pkg.dev/theta-function-429605-j0/rag-artifacts'  # Replace with your GCS bucket for storing artifacts
+    location: 'gs://mlflow_connection_bucket'
     paths:
-      - 'data/processed_stock_data.parquet'
-      - 'data/processed_news_data.parquet'
+      - 'Model_Pipeline/models/**'
+      - 'logs/**'
+
+substitutions:
+  _MLFLOW_TRACKING_URI: 'http://127.0.0.:5001'
