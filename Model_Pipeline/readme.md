@@ -1,1 +1,1 @@
-Data Pipeline setup 
+This folder contains all required scripts for model pipeline.
