@@ -431,3 +431,81 @@ end_accuracy = accuracy_score(all_end_labels, all_end_preds)
 print(f"Start Position Accuracy: {start_accuracy * 100:.2f}%")
 print(f"End Position Accuracy: {end_accuracy * 100:.2f}%")
 
+
+from transformers import pipeline
+
+# Load a sentiment analysis pipeline from Hugging Face
+sentiment_analyzer = pipeline("sentiment-analysis")
+
+# Define keywords or phrases that could indicate potential biases
+bias_keywords = ["high", "low", "surge", "drop", "positive", "negative", "crash", "volatile", "disruptions", "optimistic", "pessimistic"]
+
+# Function to detect bias in retrieved contexts
+def detect_bias_in_context(retrieved_docs):
+    bias_detected = False
+    bias_details = {
+        "biased_documents": [],
+        "sentiment_analysis": [],
+        "keyword_hits": []
+    }
+
+    for doc in retrieved_docs:
+        keyword_hits = [keyword for keyword in bias_keywords if keyword.lower() in doc.lower()]
+        if keyword_hits:
+            bias_detected = True
+            bias_details["keyword_hits"].append({"document": doc, "keywords": keyword_hits})
+        sentiment = sentiment_analyzer(doc)[0]
+        bias_details["sentiment_analysis"].append({"document": doc, "sentiment": sentiment})
+        if sentiment["label"] == "NEGATIVE" and sentiment["score"] > 0.75 or \
+           sentiment["label"] == "POSITIVE" and sentiment["score"] > 0.75:
+            bias_detected = True
+            bias_details["biased_documents"].append({"document": doc, "sentiment": sentiment})
+
+    return bias_detected, bias_details
+
+# Function to detect bias in generated answer
+def detect_bias_in_answer(answer):
+    keyword_hits = [keyword for keyword in bias_keywords if keyword.lower() in answer.lower()]
+    sentiment = sentiment_analyzer(answer)[0]
+    bias_detected = bool(keyword_hits) or \
+                    (sentiment["label"] == "NEGATIVE" and sentiment["score"] > 0.75) or \
+                    (sentiment["label"] == "POSITIVE" and sentiment["score"] > 0.75)
+
+    bias_details = {
+        "sentiment": sentiment,
+        "keyword_hits": keyword_hits
+    }
+
+    return bias_detected, bias_details
+
+# Mock functions for context retrieval and answer generation
+def retrieve_context(query, index, documents):
+    return ["This is a mock document relevant to the query."]
+
+def generate_answer(query, retrieved_docs):
+    return f"Mock answer for query: {query}"
+
+# Example queries
+queries = [
+    "What is the impact of climate change on agriculture?",
+    "What are the latest advancements in renewable energy?",
+    "Explain the stock price trend for Apple."
+]
+
+# Run the pipeline
+for query in queries:
+    retrieved_docs = retrieve_context(query, None, None)
+    context_bias_detected, context_bias_details = detect_bias_in_context(retrieved_docs)
+    answer = generate_answer(query, retrieved_docs)
+    answer_bias_detected, answer_bias_details = detect_bias_in_answer(answer)
+
+    print("Query:", query)
+    print("Answer:", answer)
+    print("Context Bias Detected:", context_bias_detected)
+    if context_bias_detected:
+        print("Context Bias Details:", context_bias_details)
+    print("Answer Bias Detected:", answer_bias_detected)
+    if answer_bias_detected:
+        print("Answer Bias Details:", answer_bias_details)
+    print("\n" + "="*40 + "\n")
+
