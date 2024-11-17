@@ -1,1 +1,53 @@
+name: Deploy MLFlow Server
 
+on:
+  push:
+    branches: [main]
+
+jobs:
+  login-build-push:
+    name: Build, Push and Run
+    runs-on: ubuntu-latest
+
+    env:
+      REGION: us-east1                           # Updated region
+      PROJECT_ID: theta-function-429605-j0      # Updated project ID
+      REPOSITORY: mlflow-repository             # Updated artifact repository
+      SERVICE_ACCOUNT: mlflow-service-account@theta-function-429605-j0.iam.gserviceaccount.com  # Updated service account email
+      SERVICE_NAME: mlflow-service-account      # Updated service name
+
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v3
+
+    - id: 'auth'
+      name: Authenticate to Google Cloud
+      uses: google-github-actions/auth@v1
+      with: 
+        project_id: '${{ env.PROJECT_ID }}'
+        credentials_json: '${{ secrets.GOOGLE_APPLICATION_CREDENTIALS }}'
+    
+    - name: 'Docker config'
+      run: |-
+        gcloud auth configure-docker ${{ env.REGION }}-docker.pkg.dev 
+
+    - name: 'Build container'
+      run: |-
+        docker build -t "${{ env.REGION }}-docker.pkg.dev/${{ env.PROJECT_ID }}/${{ env.REPOSITORY }}/mlflow:${{ github.sha }}" .
+      
+    - name: 'Push container'
+      run: |-
+        docker push "${{ env.REGION }}-docker.pkg.dev/${{ env.PROJECT_ID }}/${{ env.REPOSITORY }}/mlflow:${{ github.sha }}"
+    
+    - name: Deploy Google Cloud Run
+      run: |
+        gcloud run deploy "${{ env.SERVICE_NAME }}" \
+          --image "${{ env.REGION }}-docker.pkg.dev/${{ env.PROJECT_ID }}/${{ env.REPOSITORY }}/mlflow:${{ github.sha }}" \
+          --region "${{ env.REGION }}" \
+          --service-account "${{ env.SERVICE_ACCOUNT }}" \
+          --update-secrets=/secrets/credentials=access_keys:latest \
+          --update-secrets=POSTGRESQL_URL=mlflow-db-secret:latest \
+          --update-secrets=STORAGE_URL=mlflow-bucket-db:latest \
+          --memory 2Gi \
+          --allow-unauthenticated \
+          --port 5001
