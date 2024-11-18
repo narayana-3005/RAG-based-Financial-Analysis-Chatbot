@@ -1,5 +1,5 @@
 # Use Python 3.9 slim image as the base
-FROM python:3.9-slim
+FROM python:3.9
 
 # Set environment variables to prevent Python from writing .pyc files and enable buffer flushing
 ENV PYTHONDONTWRITEBYTECODE=1 \
