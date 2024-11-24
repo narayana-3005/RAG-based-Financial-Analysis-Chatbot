@@ -16,9 +16,6 @@ RUN pip install --upgrade pip && pip install -r requirements.txt
 # Copy necessary files
 COPY server.sh server.sh
 
-# Set environment variables
-ENV MLFLOW_SERVICE_PRIVATE_KEY=/app/secrets/credentials
-
 # Expose the port for MLflow
 EXPOSE 5001
 
