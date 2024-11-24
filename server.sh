@@ -6,6 +6,10 @@ POSTGRESQL_URL=$(gcloud secrets versions access latest --secret=mlflow-db-secret
 # Fetch Storage URL from GCP Secret Manager
 STORAGE_URL=$(gcloud secrets versions access latest --secret=mlflow-bucket-db)
 
+# Debugging: Print secrets (remove in production)
+echo "POSTGRESQL_URL: $POSTGRESQL_URL"
+echo "STORAGE_URL: $STORAGE_URL"
+
 # Upgrade the MLflow database
 mlflow db upgrade "$POSTGRESQL_URL"
 
