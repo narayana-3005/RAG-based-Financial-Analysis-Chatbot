@@ -11,7 +11,7 @@ mlflow db upgrade "$POSTGRESQL_URL"
 
 # Start the MLflow server
 mlflow server \
-  --host 0.0.0.0 \  # Use 0.0.0.0 instead of 127.0.0.1 to allow external access in Cloud Run
-  --port ${PORT:-5001} \  # Default to 5001 but allow Cloud Run to override with $PORT
+  --host 0.0.0.0 \
+  --port 5001 \
   --backend-store-uri "$POSTGRESQL_URL" \
   --artifacts-destination "$STORAGE_URL"
