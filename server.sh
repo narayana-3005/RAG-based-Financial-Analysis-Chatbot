@@ -1,12 +1,12 @@
 #!/bin/bash
 
-# Check if gcloud is installed
+# Debug: Check gcloud installation
 if ! command -v gcloud &> /dev/null; then
     echo "Error: gcloud CLI is not installed or not in PATH."
     exit 1
 fi
 
-# Check if mlflow is installed
+# Debug: Check mlflow installation
 if ! command -v mlflow &> /dev/null; then
     echo "Error: mlflow is not installed or not in PATH."
     exit 1
@@ -18,7 +18,7 @@ POSTGRESQL_URL=$(gcloud secrets versions access latest --secret=mlflow-db-secret
 # Fetch Storage URL from GCP Secret Manager
 STORAGE_URL=$(gcloud secrets versions access latest --secret=mlflow-bucket-db)
 
-# Debugging: Print environment variables (remove in production)
+# Debugging: Print variables (remove in production)
 echo "POSTGRESQL_URL: $POSTGRESQL_URL"
 echo "STORAGE_URL: $STORAGE_URL"
 echo "MLFLOW_SECRET_KEY: $MLFLOW_SECRET_KEY"
