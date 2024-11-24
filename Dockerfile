@@ -9,14 +9,14 @@ RUN apt-get update && apt-get install -y curl gnupg && \
     curl https://packages.cloud.google.com/apt/doc/apt-key.gpg | apt-key --keyring /usr/share/keyrings/cloud.google.gpg add - && \
     apt-get update && apt-get install -y google-cloud-sdk
 
-# Ensure gcloud is added to PATH
+# Ensure gcloud CLI is added to PATH
 ENV PATH="/google-cloud-sdk/bin:$PATH"
 
 # Install Python dependencies
 COPY requirements.txt requirements.txt
 RUN pip install --upgrade pip && pip install -r requirements.txt
 
-# Ensure mlflow is globally accessible
+# Install mlflow globally
 RUN pip install mlflow
 
 # Copy the server script
@@ -26,7 +26,7 @@ COPY server.sh server.sh
 RUN chmod +x server.sh
 
 # Expose the port for MLflow
-EXPOSE 5001
+EXPOSE 8080
 
 # Set entrypoint to server.sh
 ENTRYPOINT ["./server.sh"]
