@@ -6,47 +6,44 @@ on:
 
 jobs:
   login-build-push:
-    name: Build, Push and Run
+    name: Build, Push, and Deploy MLflow
     runs-on: ubuntu-latest
 
     env:
       REGION: us-east1
       PROJECT_ID: theta-function-429605-j0
       REPOSITORY: mlflow-repository
+      SERVICE_NAME: mlflow-server
       SERVICE_ACCOUNT: mlflow-service-account@theta-function-429605-j0.iam.gserviceaccount.com
-      SERVICE_NAME: mlflow-service-account
 
     steps:
-    - name: Checkout
+    - name: Checkout Code
       uses: actions/checkout@v3
 
-    - id: 'auth'
-      name: Authenticate to Google Cloud
+    - name: Authenticate with Google Cloud
       uses: google-github-actions/auth@v1
-      with: 
-        project_id: '${{ env.PROJECT_ID }}'
-        credentials_json: '${{ secrets.GOOGLE_APPLICATION_CREDENTIALS }}'
-    
-    - name: 'Docker config'
-      run: |-
-        gcloud auth configure-docker ${{ env.REGION }}-docker.pkg.dev 
+      with:
+        project_id: ${{ env.PROJECT_ID }}
+        credentials_json: ${{ secrets.GOOGLE_APPLICATION_CREDENTIALS }}
 
-    - name: 'Build container'
-      run: |-
-        docker build -t "${{ env.REGION }}-docker.pkg.dev/${{ env.PROJECT_ID }}/${{ env.REPOSITORY }}/mlflow:${{ github.sha }}" .
-      
-    - name: 'Push container'
-      run: |-
-        docker push "${{ env.REGION }}-docker.pkg.dev/${{ env.PROJECT_ID }}/${{ env.REPOSITORY }}/mlflow:${{ github.sha }}"
-    
-    - name: Deploy Google Cloud Run
+    - name: Configure Docker
+      run: gcloud auth configure-docker ${{ env.REGION }}-docker.pkg.dev
+
+    - name: Build Docker Image
+      run: |
+        docker build -t "${{ env.REGION }}-docker.pkg.dev/${{ env.PROJECT_ID }}/${{ env.REPOSITORY }}/mlflow-server:latest" .
+
+    - name: Push Docker Image to Artifact Registry
+      run: |
+        docker push "${{ env.REGION }}-docker.pkg.dev/${{ env.PROJECT_ID }}/${{ env.REPOSITORY }}/mlflow-server:latest"
+
+    - name: Deploy to Cloud Run
       run: |
         gcloud run deploy "${{ env.SERVICE_NAME }}" \
-          --image "${{ env.REGION }}-docker.pkg.dev/${{ env.PROJECT_ID }}/${{ env.REPOSITORY }}/mlflow:${{ github.sha }}" \
+          --image "${{ env.REGION }}-docker.pkg.dev/${{ env.PROJECT_ID }}/${{ env.REPOSITORY }}/mlflow-server:latest" \
+          --platform managed \
           --region "${{ env.REGION }}" \
-          --service-account "${{ env.SERVICE_ACCOUNT }}" \
-          --update-secrets=POSTGRESQL_URL=mlflow-db-secret:latest \
-          --update-secrets=STORAGE_URL=mlflow-bucket-db:latest \
-          --memory 2Gi \
           --allow-unauthenticated \
+          --update-secrets POSTGRESQL_URL=mlflow-db-secret:latest,STORAGE_URL=mlflow-bucket-db:latest,MLFLOW_SECRET_KEY=${{ secrets.MLFLOWSECRETKEY }} \
+          --memory 2Gi \
           --port 5001
