@@ -1,49 +1,36 @@
-name: Deploy MLFlow Server
+name: Build, Push, and Deploy Model Pipeline
 
 on:
   push:
-    branches: [main]
+    branches:
+      - main
 
 jobs:
-  login-build-push:
-    name: Build, Push, and Deploy MLflow
+  deploy:
     runs-on: ubuntu-latest
 
-    env:
-      REGION: us-east1
-      PROJECT_ID: theta-function-429605-j0
-      REPOSITORY: mlflow-repository
-      SERVICE_NAME: mlflow-server
-      SERVICE_ACCOUNT: mlflow-service-account@theta-function-429605-j0.iam.gserviceaccount.com
-
     steps:
-    - name: Checkout Code
+    - name: Check out code
       uses: actions/checkout@v3
 
     - name: Authenticate with Google Cloud
       uses: google-github-actions/auth@v1
       with:
-        project_id: ${{ env.PROJECT_ID }}
-        credentials_json: ${{ secrets.GOOGLE_APPLICATION_CREDENTIALS }}
+        credentials_json: ${{ secrets.CLOUD_RUN_KEY }}
 
     - name: Configure Docker
-      run: gcloud auth configure-docker ${{ env.REGION }}-docker.pkg.dev
+      run: gcloud auth configure-docker
 
     - name: Build Docker Image
-      run: |
-        docker build -t "${{ env.REGION }}-docker.pkg.dev/${{ env.PROJECT_ID }}/${{ env.REPOSITORY }}/mlflow-server:latest" .
+      run: docker build -t gcr.io/theta-function-429605-j0/model-pipeline:latest .
 
     - name: Push Docker Image to Artifact Registry
-      run: |
-        docker push "${{ env.REGION }}-docker.pkg.dev/${{ env.PROJECT_ID }}/${{ env.REPOSITORY }}/mlflow-server:latest"
+      run: docker push gcr.io/theta-function-429605-j0/model-pipeline:latest
 
     - name: Deploy to Cloud Run
       run: |
-        gcloud run deploy "${{ env.SERVICE_NAME }}" \
-          --image "${{ env.REGION }}-docker.pkg.dev/${{ env.PROJECT_ID }}/${{ env.REPOSITORY }}/mlflow-server:latest" \
-          --platform managed \
-          --region "${{ env.REGION }}" \
-          --allow-unauthenticated \
-          --update-secrets POSTGRESQL_URL=mlflow-db-secret:latest,STORAGE_URL=mlflow-bucket-db:latest,MLFLOW_SECRET_KEY=${{ secrets.MLFLOWSECRETKEY }} \
-          --memory 2Gi \
-          --port 5001
+        gcloud run deploy model-pipeline-service \
+          --image=gcr.io/theta-function-429605-j0/model-pipeline:latest \
+          --region=us-east1 \
+          --platform=managed \
+          --allow-unauthenticated
