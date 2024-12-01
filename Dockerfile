@@ -1,21 +1,25 @@
-# Base image
-FROM python:3.9.18-slim
 
-# Set working directory
-WORKDIR /mlflow
 
-# Install necessary dependencies
-RUN pip install mlflow psycopg2-binary google-cloud-storage
 
-# Environment variable for artifact storage
-ENV DEFAULT_ARTIFACT_ROOT="gs://mlflow_connection_bucket/artifacts"
+# Use an official Python runtime as the base image
+FROM python:3.9-slim
 
-# Expose the MLflow server port
-EXPOSE 8080
+# Set the working directory to the Model_Pipeline folder
+WORKDIR /Model_Pipeline
 
-# Command to run MLflow server
-CMD mlflow server \
-    --backend-store-uri ${BACKEND_STORE_URI} \
-    --default-artifact-root ${DEFAULT_ARTIFACT_ROOT} \
-    --host 0.0.0.0 \
-    --port 8080
+# Copy the requirements file into the container
+COPY requirements.txt ./
+
+
+# Install any required Python packages
+RUN pip install --no-cache-dir -r requirements.txt
+
+# Copy the entire Model_Pipeline directory into the container
+COPY . ./
+
+# Expose the port your app runs on (if applicable)
+EXPOSE 8000
+
+# Set the entry point for the container
+CMD ["python", "scripts/ml_ops_model.py"]
+
