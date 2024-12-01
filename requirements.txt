@@ -1,18 +1,13 @@
-numpy>=1.20.0,<1.23.0
-protobuf>=3.20.3,<4
+
+
+
+protobuf>=3.12.2,<3.20
 apache-beam[gcp]==2.38.0
 tensorflow==2.11.0
 tensorflow-data-validation==1.8.0
-mlflow-skinny>=2.0.0
+numpy>=1.20.0,<1.23.0
 pandas
 matplotlib
 seaborn
 yfinance
-
-# Ensure compatible apache-beam version
-apache-beam[gcp]==2.38.0
-
-# TensorFlow and related tools
-tensorflow==2.11.0
-tensorflow-data-validation==1.8.0
 
