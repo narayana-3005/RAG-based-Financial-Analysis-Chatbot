@@ -1,34 +1,13 @@
-# Data manipulation and processing
-pandas==1.5.3
-numpy==1.24.2
-
-# TensorFlow Data Validation for schema and data validation
-tensorflow-data-validation==1.8.0
-tensorflow==2.11.0
-
-# Google Cloud Storage client (if using GCS for data storage)
-google-cloud-storage==2.7.0
-
-# Yahoo Finance API for stock data (optional, replace if using a different source)
-yfinance==0.2.18
-
-# Other common libraries for data science
-scipy==1.10.1
-matplotlib==3.7.1
-seaborn==0.12.2
-
-# Jupyter (optional, for interactive development in Jupyter Notebooks)
-jupyter==1.0.0
-
-google-cloud-storage==2.7.0
-psycopg2-binary==2.9.9
-
-
-# Loosen protobuf version
-protobuf>=3.20.3,<4
-
-# Match numpy version with apache-beam
 numpy>=1.20.0,<1.23.0
+protobuf>=3.20.3,<4
+apache-beam[gcp]==2.38.0
+tensorflow==2.11.0
+tensorflow-data-validation==1.8.0
+mlflow-skinny>=2.0.0
+pandas
+matplotlib
+seaborn
+yfinance
 
 # Ensure compatible apache-beam version
 apache-beam[gcp]==2.38.0
