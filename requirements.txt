@@ -10,4 +10,6 @@ pandas
 matplotlib
 seaborn
 yfinance
-
+streamlit
+google-cloud-aiplatform
+requests
