@@ -2,12 +2,13 @@ import streamlit as st
 from google.cloud import aiplatform
 import json
 import requests
+import os
+
 
 # Initialize Google Cloud AI Platform
 aiplatform.init()
 
 # Your GCP token (Directly included)
-import os
 
 # Fetch the GCP token from environment variables
 GCP_TOKEN = os.getenv('GCP_CREDENTIALS')
