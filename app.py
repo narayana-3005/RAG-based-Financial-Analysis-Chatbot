@@ -7,7 +7,17 @@ import requests
 aiplatform.init()
 
 # Your GCP token (Directly included)
-GCP_TOKEN = "theta-function-429605-j0-7e0753216ae2.json"
+import os
+
+# Fetch the GCP token from environment variables
+GCP_TOKEN = os.getenv('GCP_CREDENTIALS')
+
+if not GCP_TOKEN:
+    raise ValueError("GCP_CREDENTIALS is not set in environment variables.")
+    
+# The rest of your app.py code using GCP_TOKEN
+
+#GCP_TOKEN = "theta-function-429605-j0-7e0753216ae2.json"
 
 # Define LLM query function with error handling
 def query_llm(prompt):
