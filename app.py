@@ -19,7 +19,10 @@ if not GCP_TOKEN:
 # The rest of your app.py code using GCP_TOKEN
 
 #GCP_TOKEN = "theta-function-429605-j0-7e0753216ae2.json"
+st.set_option('server.port', 8080)
 
+# Initialize Google Cloud AI Platform
+aiplatform.init()
 # Define LLM query function with error handling
 def query_llm(prompt):
     try:
@@ -55,3 +58,4 @@ if st.button("Send"):
         st.write(response)
     else:
         st.warning("Please enter a query.")
+
