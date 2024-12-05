@@ -5,3 +5,7 @@ faiss-cpu==1.7.4
 google-cloud-storage==2.11.0
 pyarrow==12.0.1
 numpy==1.24.2
+streamlit
+google-cloud-aiplatform
+pandas
+requests
