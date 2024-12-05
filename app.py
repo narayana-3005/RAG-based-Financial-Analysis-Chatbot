@@ -19,6 +19,8 @@ if not GCP_TOKEN:
 # The rest of your app.py code using GCP_TOKEN
 
 #GCP_TOKEN = "theta-function-429605-j0-7e0753216ae2.json"
+#changing the port for application to work on port 8080
+st.set_option('server.port', 8080)
 
 # Define LLM query function with error handling
 def query_llm(prompt):
