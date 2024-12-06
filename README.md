@@ -389,4 +389,4 @@ Once data is scraped, it is sent to an intermediary server via API calls. The se
 Model Integration: 
 After the data is stored, the server forwards it to the model for processing. The model uses the stored data to generate context-specific, summarized responses tailored to financial queries 
 
-### Test
+
