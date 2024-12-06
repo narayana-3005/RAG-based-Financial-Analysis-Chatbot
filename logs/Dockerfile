@@ -1,4 +1,3 @@
-
 # Use a lightweight Python image as the base
 FROM python:3.9-slim
 
@@ -14,12 +13,12 @@ RUN apt-get update && apt-get install -y gcc && rm -rf /var/lib/apt/lists/*
 # Set the working directory inside the container
 WORKDIR /app
 
-# Copy the logs.py file and dependencies into the container
-COPY ./RAG-based-Financial-Analysis-Chatbot/logs/logs.py /app/logs.py
-COPY ./RAG-based-Financial-Analysis-Chatbot/logs/requirements.txt /app/requirements.txt
+# Copy the logs.py and requirements.txt files into the container
+COPY logs.py /app/logs.py
+COPY requirements.txt /app/requirements.txt
 
 # Copy the service account key into the container
-COPY ./Model_Pipeline/scripts/theta-function-429605-j0-7e0753216ae2.json /app/credentials.json
+COPY ../../Model_Pipeline/scripts/theta-function-429605-j0-7e0753216ae2.json /app/credentials.json
 
 # Install Python dependencies from requirements.txt
 RUN pip install --no-cache-dir -r requirements.txt
