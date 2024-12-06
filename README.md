@@ -1,14 +1,14 @@
 # RAG-based-Financial-Analysis-Chatbot
 In the rapidly evolving financial landscape, access to accurate and timely information is paramount for informed decision-making. To address this need, we propose the development of a Retrieval-Augmented Generation (RAG) based chatbot tailored for Quality Assurance (QA) in the financial sector. This chatbot will leverage comprehensive datasets comprising real-time stock prices and financial news to provide users with precise answers, insightful analysis, and up-to-date information. By integrating advanced natural language processing (NLP) techniques with robust data sources, our solution aims to enhance user experience, streamline information retrieval, and support financial professionals in making data-driven decisions.
 
-# RAG Based Financial Chatbot UI:
+# Chatbot UI:
 
 ![image](https://github.com/user-attachments/assets/2d89614a-8788-4190-9f9d-c0286dd2fcd2)
 
 <img width="1439" alt="Screenshot 2024-12-05 at 11 26 47 PM" src="https://github.com/user-attachments/assets/3ef0aa96-78b4-4e16-95e8-d271e521be64">
 
 
-RAG Based Financial Chatbot 
+# RAG Based Financial Chatbot 
 
 # Introduction: 
 
