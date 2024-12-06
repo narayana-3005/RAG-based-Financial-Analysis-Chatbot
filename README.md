@@ -313,7 +313,7 @@ containerization and deployment:
 The model is containerized using Docker and deployed via Google Cloud Run for seamless scalability and accessibility. The deployment pipeline integrates with Google Cloud Composer for task orchestration, ensuring end-to-end automation. Upon successful training, the updated model is deployed for production use, optimized for real-time query handling in financial analysis scenarios. 
 
 Drift Detection: 
-We are using multiple feedback top to detect drift such as click rate of UI button to provide feedback whether response is helpful or not, changes in length of user prompts, and large number of new words detections in recent news data.
+We are using multiple feedback top to detect drift such as click rate of UI button to provide feedback whether response is helpful or not, changes in length of user prompts, and large number of new words detections in recent news data. We are providing required notification to user if such drift detected by application.
 
 # High Level End-to-End Design Overview 
 
