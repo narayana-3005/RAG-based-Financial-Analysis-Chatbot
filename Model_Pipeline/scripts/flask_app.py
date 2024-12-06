@@ -129,32 +129,35 @@ def download_from_gcp(bucket_name, source_folder, destination_folder):
 
         print(f"Downloaded {blob.name} to {local_path}")
 
-try:
-    # Load models and tokenizers
-    bucket_name = "fin_rag_model_storage"
-    source_folder = "facebook_dpr_model"
-    destination_folder = "./downloaded_models"  # Local folder to download models
-    os.makedirs(destination_folder, exist_ok=True)
-    download_from_gcp(bucket_name, source_folder, destination_folder)
+if __name__ != "__main__":
+    try:
+        # Load models and tokenizers at startup
+        logger.info("Preloading models and tokenizers...")
+        bucket_name = "fin_rag_model_storage"
+        source_folder = "facebook_dpr_model"
+        destination_folder = "./downloaded_models"
+        os.makedirs(destination_folder, exist_ok=True)
+        download_from_gcp(bucket_name, source_folder, destination_folder)
 
-    # Load models and tokenizers from the downloaded directory
-    context_encoder = DPRContextEncoder.from_pretrained(os.path.join(destination_folder, "context_encoder"))
-    question_encoder = DPRQuestionEncoder.from_pretrained(os.path.join(destination_folder, "question_encoder"))
-    reader_model = DPRReader.from_pretrained(os.path.join(destination_folder, "reader_model"))
-    reader_tokenizer = DPRReaderTokenizer.from_pretrained(os.path.join(destination_folder, "reader_tokenizer"))
+        context_encoder = DPRContextEncoder.from_pretrained(
+            os.path.join(destination_folder, "context_encoder")
+        )
+        question_encoder = DPRQuestionEncoder.from_pretrained(
+            os.path.join(destination_folder, "question_encoder")
+        )
+        reader_model = DPRReader.from_pretrained(
+            os.path.join(destination_folder, "reader_model")
+        )
+        reader_tokenizer = DPRReaderTokenizer.from_pretrained(
+            os.path.join(destination_folder, "reader_tokenizer")
+        )
+        index = load_index_from_gcs()
+        documents_data = load_documents_data_from_gcs()
 
-    logger.info("Models and tokenizers loaded successfully.")
-
-    # Build Index
-    index = load_index_from_gcs()
-
-    # Build Index
-    documents_data = load_documents_data_from_gcs()
-
-except Exception as e:
-    logger.error(f"Error loading models or tokenizers: {e}")
-    raise e
-
+        logger.info("Models and tokenizers preloaded successfully.")
+    except Exception as e:
+        logger.error(f"Error preloading models or tokenizers: {e}")
+        raise e
 # Route for prediction
 @app.route("/predict", methods=["POST"])
 def predict():
