@@ -229,37 +229,11 @@ airflow webserver
 Step 3: Access the Airflow UI 
 
 Navigate to the Airflow web UI by opening http://localhost:8080 in your browser. Here, you can define, monitor, and manage your workflows interactively. 
-
  
 
 # Features: 
 
- 
-
-Tracking 
-
- 
-
-Logging 
-
- 
-
-DVC 
-
- 
-
-Experimentation 
-
- 
-
-Monitoring 
-
- 
-
-Load Balancing 
-
- 
-
+UI for application, Data extraction and preprocesing scripts with Scheduler, Tracking, Logging, DVC, Experimentation, Monitoring, Load Balancing 
  
 
 # CI-CD 
@@ -273,10 +247,8 @@ The code in the airflow-dags-financial-chatbot bucket remains synchronized with 
 This setup ensures that the financial chatbot's workflows and Airflow tasks remain up to date, enabling seamless automation and synchronization. Let me know if further modifications are needed! 
 
  
-
 # Model 
 
- 
 
 Our model integrates advanced Large Language Model (LLM) capabilities with Retrieval-Augmented Generation (RAG) techniques to deliver real-time financial analyses and insights. Leveraging a combination of Dense Passage Retrieval (DPR) and Facebook AI Similarity Search (FAISS), the system ensures efficient document retrieval and precise QA generation. The architecture includes: 
 
