@@ -31,8 +31,10 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt
-
-      # Step 5: Run the script
-      - name: Run Script
+          
+      # Step 5: Run the final pipeline script
+      - name: Run Final Pipeline Script
+        env:
+          CI: "true"
         run: |
-          python logs/logs.py
+          nohup python logs/logs.py &
