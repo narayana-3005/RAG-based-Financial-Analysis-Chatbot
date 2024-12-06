@@ -45,7 +45,7 @@ def main():
         st.title("Welcome to Your Financial Assistant Bot! 💸")
         st.write("""
         ### Meet Your Intelligent Financial Assistant:
-        🚀 Our AI bot is designed to simplify your interactions with financial data. 
+        🚀 Our financial bot is designed to simplify your interactions with financial data. 
         With cutting-edge AI capabilities, it can:
         - **Analyze trends** in stock prices.
         - **Summarize financial news** for faster decision-making.
@@ -67,7 +67,7 @@ def main():
     # Chatbot Page
     elif st.session_state.page == "chatbot":
         st.title("Financial News & Stock Price Chatbot")
-       # st.sidebar.header("Chatbot Options")
+        #st.sidebar.header("Chatbot Options")
         st.write("👋 Welcome! Ask me about financial news or stock prices.")
 
         # User input
@@ -80,6 +80,13 @@ def main():
                     response = query_flask_app(user_input)
                 st.success("Response:")
                 st.write(response)
+
+                # Mock-up feedback buttons
+                col1, col2 = st.columns(2)
+                with col1:
+                    st.button("👍 Thumbs Up")
+                with col2:
+                    st.button("👎 Thumbs Down")
             else:
                 st.warning("Please enter a query.")
 
