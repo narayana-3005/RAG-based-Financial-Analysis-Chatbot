@@ -16,6 +16,7 @@ import io
 import pyarrow.parquet as pq
 from google.cloud import storage
 from datetime import datetime
+from openai import OpenAI
 import json
 
 # Set up logging
@@ -85,25 +86,53 @@ def retrieve_context(query, index, documents, k=5):
     logger.info("Method: retrieve_context execution completed.")
     return retrieved_docs
 
-# Function to generate the answer using the DPRReader (Facebook's model for QA)
-def generate_answer(query, retrieved_docs):
+# # Function to generate the answer using the DPRReader (Facebook's model for QA)
+# def generate_answer(query, retrieved_docs):
+#     """Generate an answer to the query using the DPRReader model."""
+#     logger.info("Method: generate_answer execution started.")
+#     # Combine retrieved documents into a context for the model
+#     context = " ".join(retrieved_docs)
+#
+#     # Encode the query and context to generate the answer
+#     inputs = reader_tokenizer(query, context, return_tensors="pt", truncation=True, padding=True, max_length=512)
+#     with torch.no_grad():
+#         outputs = reader_model(**inputs)
+#
+#     # Get the best answer (usually in the 'start' and 'end' logits)
+#     start_idx = outputs.start_logits.argmax()
+#     end_idx = outputs.end_logits.argmax()
+#
+#     # Decode the answer from the tokens
+#     answer_tokens = inputs.input_ids[0][start_idx:end_idx + 1]
+#     answer = reader_tokenizer.decode(answer_tokens, skip_special_tokens=True)
+#     logger.info("Method: generate_answer execution completed.")
+#     return answer
+
+# Function to generate the answer using the custom Fine tuned ChatGPT-4o
+def generate_answer_with_fine_tuned_gpt(query, retrieved_docs):
     """Generate an answer to the query using the DPRReader model."""
     logger.info("Method: generate_answer execution started.")
     # Combine retrieved documents into a context for the model
     context = " ".join(retrieved_docs)
 
-    # Encode the query and context to generate the answer
-    inputs = reader_tokenizer(query, context, return_tensors="pt", truncation=True, padding=True, max_length=512)
-    with torch.no_grad():
-        outputs = reader_model(**inputs)
+    # Extract API key
+    API_KEY = config.get("api_key")
+    client = OpenAI(api_key=API_KEY)
+    # Specify your fine-tuned model name
+    fine_tuned_model =  config.get("fine_tuned_model_name")
+    response = client.chat.completions.create(
+        messages=[{
+            "role": "user",
+            "content": "For question: "+ query +" and given relevant content : "  context;
+            }],
+        model= fine_tuned_model
+    )
+    answer = "Failed to get response from fine tuned model."
+    try:
+        answer = response.choices[0].message.content)
+    except (IndexError, AttributeError) as e:
+        logger.info(f"An error occurred: {e}")
 
-    # Get the best answer (usually in the 'start' and 'end' logits)
-    start_idx = outputs.start_logits.argmax()
-    end_idx = outputs.end_logits.argmax()
-
-    # Decode the answer from the tokens
-    answer_tokens = inputs.input_ids[0][start_idx:end_idx + 1]
-    answer = reader_tokenizer.decode(answer_tokens, skip_special_tokens=True)
     logger.info("Method: generate_answer execution completed.")
     return answer
 
@@ -131,6 +160,10 @@ def download_from_gcp(bucket_name, source_folder, destination_folder):
 
 if __name__ != "__main__":
     try:
+        # Load API keys from config.json
+        with open("config.json", "r") as config_file:
+              config = json.load(config_file)
+
         # Load models and tokenizers at startup
         logger.info("Preloading models and tokenizers...")
         bucket_name = "fin_rag_model_storage"
@@ -171,8 +204,8 @@ def predict():
         # Get the retrieved context documents
         retrieved_docs = retrieve_context(query, index, documents_data)
 
-        # Generate the answer using the DPRReader model
-        answer = generate_answer(query, retrieved_docs)
+        # Generate the answer using the fine tuned GPT model
+        answer = generate_answer_with_fine_tuned_gpt(query, retrieved_docs)
 
         logger.info("Prediction successful.")
         return jsonify({"answer": answer})
