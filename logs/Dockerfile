@@ -1,6 +1,18 @@
 # Use an official Python runtime as a parent image
 FROM python:3.8-slim
 
+
+FROM python:3.9-slim
+
+# Set environment variables
+ENV PYTHONUNBUFFERED=1
+
+# Set environment variables for Google Cloud authentication
+ENV GOOGLE_APPLICATION_CREDENTIALS="/app/credentials.json"
+
+# Install system dependencies
+RUN apt-get update && apt-get install -y gcc && rm -rf /var/lib/apt/lists/*
+
 # Set the working directory in the container
 WORKDIR /logs
 
