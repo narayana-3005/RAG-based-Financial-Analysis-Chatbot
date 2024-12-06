@@ -293,7 +293,8 @@ The pipeline is integrated with Google Cloud Composer, where successful data pre
 This system’s robust and scalable architecture makes it ideal for real-time question answering, customer support, dynamic financial analysis, and knowledge retrieval, delivering state-of-the-art solutions with cutting-edge machine learning and natural language processing techniques. 
 
 Model Components 
-
+- Fined Chatgpt-4o Model 
+- Facebook/dpr-reader-single-nq-base Model
  
 
 These are tasks that form the core of the model training pipeline, leveraging Retrieval-Augmented Generation (RAG) techniques to deliver high-performance financial analysis and insights. Below is a detailed overview of each task: 
@@ -322,39 +323,20 @@ train_model:
 
 Executes model training using the Supervised Fine-Tuning Trainer (SFTTrainer) with predefined arguments and settings. During training, key metrics such as loss values are logged, and training loss plots are generated and uploaded to GCS for monitoring. 
 
+Fine tuned model of ChatGPT 4o is trained and evaluated using ChatGPT training dashborad with strong indication of learning by decrease in loss metrics is found.
+
 evaluate_model: 
 
-Assesses the model’s performance on test data using metrics like ROUGE-L score and semantic similarity to ensure the quality of generated responses. Evaluation outputs, including detailed graphs, are saved to GCS for further analysis and validation. 
+Assesses the model’s performance on test data using metrics like BLEU, ROUGE-L score and semantic similarity to ensure the quality of generated responses. Evaluation outputs, including detailed graphs, are saved to GCS for further analysis and validation. 
 
 containerization and deployment: 
 
 The model is containerized using Docker and deployed via Google Cloud Run for seamless scalability and accessibility. The deployment pipeline integrates with Google Cloud Composer for task orchestration, ensuring end-to-end automation. Upon successful training, the updated model is deployed for production use, optimized for real-time query handling in financial analysis scenarios. 
 
- 
-
- 
-
-# Model Evaluation: 
-
- 
-
- 
-
-# Model Deployment: 
-
- 
-
- 
-
-# Drift Detection: 
-
- 
-
- 
+Drift Detection: 
+We are using multiple feedback top to detect drift such as click rate of UI button to provide feedback whether response is helpful or not, changes in length of user prompts, and large number of new words detections in recent news data.
 
 # High Level End-to-End Design Overview 
-
- 
 
  Data Ingestion: 
 
