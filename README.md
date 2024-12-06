@@ -274,7 +274,7 @@ This system’s robust and scalable architecture makes it ideal for real-time qu
 Model Components 
 - Fined Chatgpt-4o Model 
 - Facebook/dpr-reader-single-nq-base Model
- 
+
 
 These are tasks that form the core of the model training pipeline, leveraging Retrieval-Augmented Generation (RAG) techniques to deliver high-performance financial analysis and insights. Below is a detailed overview of each task: 
 
