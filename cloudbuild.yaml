@@ -1,91 +1,158 @@
 steps:
-  # Step 1: Set up the Python environment and install dependencies
-  - name: 'python:3.9'
-    id: 'Install Dependencies'
-    entrypoint: 'bash'
+  # Step 1: Trigger preprocess-stock-data service
+  - name: 'curlimages/curl'
     args:
-      - '-c'
-      - |
-        pip install -r requirements.txt
-        pip install mlflow google-cloud-storage
+      - '-X'
+      - 'POST'
+      - '-H'
+      - 'Authorization: Bearer $(gcloud auth print-identity-token)'
+      - '-H'
+      - 'Content-Type: application/json'
+      - '-d'
+      - '{"trigger": "true"}'
+      - 'https://preprocess-stock-data-184982369838.us-east1.run.app'
 
-  # Step 2: Retrieve raw data from GCP bucket
-  - name: 'google/cloud-sdk:slim'
-    id: 'Retrieve Data'
-    entrypoint: 'bash'
+  # Step 2: Trigger preprocessed-news-articles service
+  - name: 'curlimages/curl'
     args:
-      - '-c'
-      - |
-        gsutil cp gs://stock_prices_bucket/*.parquet ./data/
-        gsutil cp gs://news_articles_bucket/*.parquet ./data/
+      - '-X'
+      - 'POST'
+      - '-H'
+      - 'Authorization: Bearer $(gcloud auth print-identity-token)'
+      - '-H'
+      - 'Content-Type: application/json'
+      - '-d'
+      - '{"trigger": "true"}'
+      - 'https://preprocessed-news-articles-184982369838.us-east1.run.app'
 
-  # Step 3: Preprocess data using scripts from Data-Pipeline
-  - name: 'python:3.9'
-    id: 'Preprocess Data'
-    entrypoint: 'python'
+  # Step 3: Trigger rag-app service
+  - name: 'curlimages/curl'
     args:
-      - 'Data-Pipeline/scripts/preprocess.py'
+      - '-X'
+      - 'POST'
+      - '-H'
+      - 'Authorization: Bearer $(gcloud auth print-identity-token)'
+      - '-H'
+      - 'Content-Type: application/json'
+      - '-d'
+      - '{"trigger": "true"}'
+      - 'https://rag-app-184982369838.us-east1.run.app'
 
-  # Step 4: Train the model
-  - name: 'python:3.9'
-    id: 'Train Model'
-    entrypoint: 'python'
+  # Step 4: Trigger stock-prices-transformed service
+  - name: 'curlimages/curl'
     args:
-      - 'Model_Pipeline/ml_ops_model.py'
+      - '-X'
+      - 'POST'
+      - '-H'
+      - 'Authorization: Bearer $(gcloud auth print-identity-token)'
+      - '-H'
+      - 'Content-Type: application/json'
+      - '-d'
+      - '{"trigger": "true"}'
+      - 'https://stock-prices-transformed-184982369838.us-east1.run.app'
 
-  # Step 5: Run bias detection
-  - name: 'python:3.9'
-    id: 'Bias Detection'
-    entrypoint: 'python'
+  # Step 5: Trigger news-articles-preprocessing service
+  - name: 'curlimages/curl'
     args:
-      - 'Model_Pipeline/bias_detection.py'
+      - '-X'
+      - 'POST'
+      - '-H'
+      - 'Authorization: Bearer $(gcloud auth print-identity-token)'
+      - '-H'
+      - 'Content-Type: application/json'
+      - '-d'
+      - '{"trigger": "true"}'
+      - 'https://news-articles-preprocessing-184982369838.us-east1.run.app'
 
-  # Step 6: Log results and metrics to MLflow
-  - name: 'python:3.9'
-    id: 'Log to MLflow'
-    entrypoint: 'bash'
+  # Step 6: Trigger news-article-ingestion service
+  - name: 'curlimages/curl'
     args:
-      - '-c'
-      - |
-        export MLFLOW_TRACKING_URI='http://127.0.0.1:5001'
-        python Model_Pipeline/log_to_mlflow.py
+      - '-X'
+      - 'POST'
+      - '-H'
+      - 'Authorization: Bearer $(gcloud auth print-identity-token)'
+      - '-H'
+      - 'Content-Type: application/json'
+      - '-d'
+      - '{"trigger": "true"}'
+      - 'https://news-article-ingestion-184982369838.us-east1.run.app'
 
-  # Step 7: Store the best model in GCP bucket
-  - name: 'google/cloud-sdk:slim'
-    id: 'Store Best Model'
-    entrypoint: 'bash'
+  # Step 7: Trigger flask-application service
+  - name: 'curlimages/curl'
     args:
-      - '-c'
-      - |
-        gsutil cp ./Model_Pipeline/models/best_model.pkl gs://mlflow_connection_bucket
+      - '-X'
+      - 'POST'
+      - '-H'
+      - 'Authorization: Bearer $(gcloud auth print-identity-token)'
+      - '-H'
+      - 'Content-Type: application/json'
+      - '-d'
+      - '{"trigger": "true"}'
+      - 'https://flask-application-184982369838.us-east1.run.app'
 
-  # Step 8: Run tests for model validation
-  - name: 'python:3.9'
-    id: 'Run Tests'
-    entrypoint: 'python'
+  # Step 8: Trigger flask-app service
+  - name: 'curlimages/curl'
     args:
-      - 'tests/test_model.py'
+      - '-X'
+      - 'POST'
+      - '-H'
+      - 'Authorization: Bearer $(gcloud auth print-identity-token)'
+      - '-H'
+      - 'Content-Type: application/json'
+      - '-d'
+      - '{"trigger": "true"}'
+      - 'https://flask-app-184982369838.us-east1.run.app'
 
-  # Step 9: Deploy the application to Cloud Run
-  - name: 'gcr.io/cloud-builders/gcloud'
-    id: 'Deploy to Cloud Run'
+  # Step 9: Trigger financial-chatbot service
+  - name: 'curlimages/curl'
     args:
-      - 'run'
-      - 'deploy'
-      - 'rag-financial-chatbot'
-      - '--source=.'
-      - '--platform=managed'
-      - '--region=us-central1'
-      - '--allow-unauthenticated'
+      - '-X'
+      - 'POST'
+      - '-H'
+      - 'Authorization: Bearer $(gcloud auth print-identity-token)'
+      - '-H'
+      - 'Content-Type: application/json'
+      - '-d'
+      - '{"trigger": "true"}'
+      - 'https://financial-chatbot-184982369838.us-west1.run.app'
 
-timeout: '1800s'
+  # Step 10: Trigger fetch-stock-data service
+  - name: 'curlimages/curl'
+    args:
+      - '-X'
+      - 'POST'
+      - '-H'
+      - 'Authorization: Bearer $(gcloud auth print-identity-token)'
+      - '-H'
+      - 'Content-Type: application/json'
+      - '-d'
+      - '{"trigger": "true"}'
+      - 'https://fetch-stock-data-184982369838.us-east1.run.app'
 
-artifacts:
-  objects:
-    location: 'gs://mlflow_connection_bucket'
-    paths:
-      - 'Model_Pipeline/models/**'
-      - 'logs/**'
+  # Step 11: Trigger chatbot-ui service
+  - name: 'curlimages/curl'
+    args:
+      - '-X'
+      - 'POST'
+      - '-H'
+      - 'Authorization: Bearer $(gcloud auth print-identity-token)'
+      - '-H'
+      - 'Content-Type: application/json'
+      - '-d'
+      - '{"trigger": "true"}'
+      - 'https://chatbot-ui-184982369838.us-east1.run.app'
 
-substitutions:
-  _MLFLOW_TRACKING_URI: 'http://127.0.0.:5001'
+  # Step 12: Trigger chatbot-container service
+  - name: 'curlimages/curl'
+    args:
+      - '-X'
+      - 'POST'
+      - '-H'
+      - 'Authorization: Bearer $(gcloud auth print-identity-token)'
+      - '-H'
+      - 'Content-Type: application/json'
+      - '-d'
+      - '{"trigger": "true"}'
+      - 'https://chatbot-container-184982369838.us-west1.run.app'
+
+timeout: "1200s" # Adjust timeout as needed
