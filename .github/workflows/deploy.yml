@@ -4,7 +4,7 @@ on:
   push:
     branches:
       - main  # Trigger on pushes to the main branch
-  workflow_dispatch:  # Allow manual trigger
+  workflow_dispatch:
 
 jobs:
   build-and-deploy:
@@ -17,16 +17,13 @@ jobs:
 
     # Step 2: Set up Google Cloud authentication
     - name: Authenticate with Google Cloud
-      run: echo "${{ secrets.GCP_CREDENTIALS }}" > key.json
-
-    # Step 3: Configure gcloud CLI
-    - name: Set up gcloud CLI
       run: |
+        echo "${{ secrets.GCP_CREDENTIALS }}" > key.json
         gcloud auth activate-service-account --key-file=key.json
         gcloud config set project theta-function-429605-j0
         gcloud config set compute/region us-east1
 
-    # Step 4: Build and push Docker image to Artifact Registry
+    # Step 3: Build and push Docker image to Artifact Registry
     - name: Build and push Docker image
       run: |
         IMAGE_NAME="gcr.io/theta-function-429605-j0/flask-app:latest"
@@ -34,7 +31,7 @@ jobs:
         gcloud auth configure-docker gcr.io
         docker push $IMAGE_NAME
 
-    # Step 5: Deploy to Cloud Run
+    # Step 4: Deploy to Cloud Run
     - name: Deploy to Cloud Run
       run: |
         IMAGE_NAME="gcr.io/theta-function-429605-j0/flask-app:latest"
