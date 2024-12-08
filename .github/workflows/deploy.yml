@@ -30,18 +30,18 @@ jobs:
     # Step 4: Build and push Docker image to Artifact Registry
     - name: Build and push Docker image
       run: |
-        IMAGE_NAME="us-east1-docker.pkg.dev/theta-function-429605-j0/gcr.io/flask-app"
+        IMAGE_NAME="gcr.io/theta-function-429605-j0/flask-app:latest"
         docker build -t $IMAGE_NAME .
-        gcloud auth configure-docker us-east1-docker.pkg.dev
+        gcloud auth configure-docker gcr.io
         docker push $IMAGE_NAME
 
     # Step 5: Deploy to Cloud Run
     - name: Deploy to Cloud Run
       run: |
-        IMAGE_NAME="us-east1-docker.pkg.dev/theta-function-429605-j0/gcr.io/flask-app"
+        IMAGE_NAME="gcr.io/theta-function-429605-j0/flask-app:latest"
         gcloud run deploy flask-app \
           --image $IMAGE_NAME \
           --region us-east1 \
           --platform managed \
           --allow-unauthenticated \
-          --port 8080
+          --port 8085
