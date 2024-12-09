@@ -1,0 +1,49 @@
+name: CI/CD for Monitoring and Deployment
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+
+    - name: Set up Python
+      uses: actions/setup-python@v3
+      with:
+        python-version: 3.9
+
+    - name: Install dependencies
+      run: |
+        pip install -r docker/requirements.txt
+
+    - name: Run tests
+      run: |
+        python -m unittest discover
+
+    - name: Authenticate with Google Cloud
+      uses: google-github-actions/auth@v1
+      with:
+        credentials_json: ${{ secrets.GCP_CREDENTIALS }}
+
+    - name: Configure Docker for GCP Artifact Registry
+      run: |
+        gcloud auth configure-docker us-east1-docker.pkg.dev
+
+    - name: Build and Push Docker Image
+      run: |
+        docker build -t us-east1-docker.pkg.dev/theta-function-429605-j0/my-repo/monitoring-app ./docker
+        docker push us-east1-docker.pkg.dev/theta-function-429605-j0/my-repo/monitoring-app
+
+    - name: Deploy to Cloud Run
+      run: |
+        gcloud run deploy monitoring-app \
+          --image us-east1-docker.pkg.dev/theta-function-429605-j0/my-repo/monitoring-app \
+          --platform managed \
+          --region us-east1 \
+          --allow-unauthenticated
