@@ -3,7 +3,7 @@ steps:
   - name: 'gcr.io/cloud-builders/docker'
     args: [
       'build',
-      '-t', 'us-central1-docker.pkg.dev/theta-function-429605-j0/my-repo/fask-app:$(SHORT_SHA)',
+      '-t', 'us-east1-docker.pkg.dev/theta-function-429605-j0/my-repo/fask-app:$(SHORT_SHA)',
       '.'
     ]
 
@@ -11,7 +11,7 @@ steps:
   - name: 'gcr.io/cloud-builders/docker'
     args: [
       'push',
-      'us-central1-docker.pkg.dev/theta-function-429605-j0/my-repo/flask-app:$(SHORT_SHA)'
+      'us-east1-docker.pkg.dev/theta-function-429605-j0/my-repo/flask-app:$(SHORT_SHA)'
     ]
 
   # Step 3: Deploy the container image to Cloud Run
@@ -19,12 +19,12 @@ steps:
     entrypoint: 'bash'
     args: ['-c', "
       gcloud run deploy my-app \
-        --image us-central1-docker.pkg.dev/theta-function-429605-j0/my-repo/flask-app:$(SHORT_SHA) \
+        --image us-east1-docker.pkg.dev/theta-function-429605-j0/my-repo/flask-app:$(SHORT_SHA) \
         --platform managed \
-        --region us-central1 \
+        --region us-east1 \
         --allow-unauthenticated
     "]
 
 images:
-  - 'us-central1-docker.pkg.dev/theta-function-429605-j0/my-repo/flask-app:$(SHORT_SHA)'
+  - 'us-east1-docker.pkg.dev/theta-function-429605-j0/my-repo/flask-app:$(SHORT_SHA)'
 
