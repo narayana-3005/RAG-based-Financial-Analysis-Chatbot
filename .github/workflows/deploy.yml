@@ -3,8 +3,8 @@ name: Deploy Flask App to Cloud Run
 on:
   push:
     branches:
-      - main
-  workflow_dispatch:
+      - main  # Trigger on pushes to the main branch
+  workflow_dispatch:  # Allow manual trigger
 
 jobs:
   build-and-deploy:
@@ -15,19 +15,19 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v3
 
-    # Step 2: Set up Google Cloud authentication
-    - name: Authenticate with Google Cloud
+    # Step 2: Authenticate with Google Cloud
+    - name: Set up Google Cloud authentication
+      uses: google-github-actions/auth@v1
+      with:
+        credentials_json: ${{ secrets.GCP_CREDENTIALS }}
+
+    # Step 3: Configure gcloud CLI
+    - name: Set up gcloud CLI
       run: |
-        echo "${{ secrets.GCP_CREDENTIALS }}" > key.json
-        cat key.json | jq . > validated_key.json
-        mv validated_key.json key.json
-        gcloud auth activate-service-account --key-file=key.json
         gcloud config set project theta-function-429605-j0
         gcloud config set compute/region us-east1
-      env:
-        GCP_CREDENTIALS: ${{ secrets.GCP_CREDENTIALS }}
 
-    # Step 3: Build and push Docker image to Artifact Registry
+    # Step 4: Build and push Docker image to Artifact Registry
     - name: Build and push Docker image
       run: |
         IMAGE_NAME="gcr.io/theta-function-429605-j0/flask-app:latest"
@@ -35,7 +35,7 @@ jobs:
         gcloud auth configure-docker gcr.io
         docker push $IMAGE_NAME
 
-    # Step 4: Deploy to Cloud Run
+    # Step 5: Deploy to Cloud Run
     - name: Deploy to Cloud Run
       run: |
         IMAGE_NAME="gcr.io/theta-function-429605-j0/flask-app:latest"
@@ -44,4 +44,4 @@ jobs:
           --region us-east1 \
           --platform managed \
           --allow-unauthenticated \
-          --update-env-vars GOOGLE_APPLICATION_CREDENTIALS="/app/credentials.json"
+          --port 8085
