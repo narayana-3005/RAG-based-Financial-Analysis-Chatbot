@@ -12,29 +12,32 @@ jobs:
 
     steps:
     # Step 1: Checkout the code
-    - name: Checkout code
+    - name: Checkout Code
       uses: actions/checkout@v3
 
-    # Step 2: Authenticate with Google Cloud
+    # Step 2: Debug directory structure
+    - name: Debug Directory Structure
+      run: ls -R
+
+    # Step 3: Authenticate with Google Cloud
     - name: Set up Google Cloud authentication
       uses: google-github-actions/auth@v1
       with:
         credentials_json: ${{ secrets.GCP_CREDENTIALS }}
 
-    # Step 3: Configure gcloud CLI
+    # Step 4: Configure gcloud CLI
     - name: Set up gcloud CLI
       run: |
         gcloud config set project theta-function-429605-j0
         gcloud config set compute/region us-east1
 
-    # Step 4: Build and push Docker image to Artifact Registry
-    - name: Build and push Docker image
+    # Step 5: Build and push Docker image
+    - name: Build and Push Docker Image
       run: |
-        # Specify the Artifact Registry path
         IMAGE_NAME="gcr.io/theta-function-429605-j0/flask-app:latest"
 
-        # Build the Docker image from the correct directory
-        docker build -t $IMAGE_NAME ./RAG-based-Financial-Analysis-Chatbot/Model_Pipeline/scripts
+        # Build the Docker image (update path based on debug output)
+        docker build -t $IMAGE_NAME ./Model_Pipeline/scripts
 
         # Authenticate Docker with Google Cloud Artifact Registry
         gcloud auth configure-docker gcr.io
@@ -42,7 +45,7 @@ jobs:
         # Push the Docker image to Artifact Registry
         docker push $IMAGE_NAME
 
-    # Step 5: Deploy to Cloud Run
+    # Step 6: Deploy to Cloud Run
     - name: Deploy to Cloud Run
       run: |
         IMAGE_NAME="gcr.io/theta-function-429605-j0/flask-app:latest"
@@ -55,7 +58,7 @@ jobs:
           --allow-unauthenticated \
           --port 8085
 
-    # Step 6: Output the Cloud Run URL
+    # Step 7: Output Cloud Run Service URL
     - name: Fetch Cloud Run Service URL
       run: |
         SERVICE_URL=$(gcloud run services describe flask-app \
