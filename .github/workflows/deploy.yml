@@ -14,6 +14,8 @@ jobs:
     # Step 1: Checkout the code
     - name: Checkout Code
       uses: actions/checkout@v3
+      with:
+        fetch-depth: 0  # Fetch the entire repository
 
     # Step 2: Debug directory structure
     - name: Debug Directory Structure
@@ -36,8 +38,8 @@ jobs:
       run: |
         IMAGE_NAME="gcr.io/theta-function-429605-j0/flask-app:latest"
 
-        # Build the Docker image (update path based on debug output)
-        docker build -t $IMAGE_NAME ./Model_Pipeline/scripts
+        # Build the Docker image using the repository root as context
+        docker build -t $IMAGE_NAME .
 
         # Authenticate Docker with Google Cloud Artifact Registry
         gcloud auth configure-docker gcr.io
