@@ -20,7 +20,7 @@ jobs:
 
     - name: Install dependencies
       run: |
-        pip install -r monitoring/requirements.txt
+        pip install -r Monitoring/requirements.txt
 
     - name: Run tests
       run: |
@@ -37,7 +37,7 @@ jobs:
 
     - name: Build and Push Docker Image
       run: |
-        docker build -t us-east1-docker.pkg.dev/theta-function-429605-j0/my-repo/monitoring-app ./monitoring
+        docker build -t us-east1-docker.pkg.dev/theta-function-429605-j0/my-repo/monitoring-app ./Monitoring
         docker push us-east1-docker.pkg.dev/theta-function-429605-j0/my-repo/monitoring-app
 
     - name: Deploy to Cloud Run
