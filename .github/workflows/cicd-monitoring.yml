@@ -42,4 +42,11 @@ jobs:
           --image us-east1-docker.pkg.dev/theta-function-429605-j0/my-repo/monitoring-app \
           --platform managed \
           --region us-east1 \
-          --allow-unauthenticated
+          --allow-unauthenticated \
+          --timeout=300
+
+    - name: Debug Logs
+      if: failure()
+      run: |
+        echo "Deployment failed. Check logs at:"
+        echo "https://console.cloud.google.com/logs/viewer?project=theta-function-429605-j0"
