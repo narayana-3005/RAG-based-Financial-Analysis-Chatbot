@@ -3,7 +3,7 @@ name: Deploy Flask App to Cloud Run
 on:
   push:
     branches:
-      - main  # Trigger on pushes to the main branch
+      - main
   workflow_dispatch:
 
 jobs:
@@ -19,7 +19,8 @@ jobs:
     - name: Authenticate with Google Cloud
       run: |
         echo "${{ secrets.GCP_CREDENTIALS }}" > key.json
-        jq . key.json  # Validate the JSON format
+        cat key.json | jq . > validated_key.json
+        mv validated_key.json key.json
         gcloud auth activate-service-account --key-file=key.json
         gcloud config set project theta-function-429605-j0
         gcloud config set compute/region us-east1
