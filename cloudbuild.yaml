@@ -1,158 +1,30 @@
 steps:
-  # Step 1: Trigger preprocess-stock-data service
-  - name: 'curlimages/curl'
-    args:
-      - '-X'
-      - 'POST'
-      - '-H'
-      - 'Authorization: Bearer $(gcloud auth print-identity-token)'
-      - '-H'
-      - 'Content-Type: application/json'
-      - '-d'
-      - '{"trigger": "true"}'
-      - 'https://preprocess-stock-data-184982369838.us-east1.run.app'
+  # Step 1: Build the container image
+  - name: 'gcr.io/cloud-builders/docker'
+    args: [
+      'build',
+      '-t', 'us-central1-docker.pkg.dev/theta-function-429605-j0/my-repo/fask-app:$(SHORT_SHA)',
+      '.'
+    ]
 
-  # Step 2: Trigger preprocessed-news-articles service
-  - name: 'curlimages/curl'
-    args:
-      - '-X'
-      - 'POST'
-      - '-H'
-      - 'Authorization: Bearer $(gcloud auth print-identity-token)'
-      - '-H'
-      - 'Content-Type: application/json'
-      - '-d'
-      - '{"trigger": "true"}'
-      - 'https://preprocessed-news-articles-184982369838.us-east1.run.app'
+  # Step 2: Push the image to Artifact Registry
+  - name: 'gcr.io/cloud-builders/docker'
+    args: [
+      'push',
+      'us-central1-docker.pkg.dev/theta-function-429605-j0/my-repo/flask-app:$(SHORT_SHA)'
+    ]
 
-  # Step 3: Trigger rag-app service
-  - name: 'curlimages/curl'
-    args:
-      - '-X'
-      - 'POST'
-      - '-H'
-      - 'Authorization: Bearer $(gcloud auth print-identity-token)'
-      - '-H'
-      - 'Content-Type: application/json'
-      - '-d'
-      - '{"trigger": "true"}'
-      - 'https://rag-app-184982369838.us-east1.run.app'
+  # Step 3: Deploy the container image to Cloud Run
+  - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+    entrypoint: 'bash'
+    args: ['-c', "
+      gcloud run deploy my-app \
+        --image us-central1-docker.pkg.dev/theta-function-429605-j0/my-repo/flask-app:$(SHORT_SHA) \
+        --platform managed \
+        --region us-central1 \
+        --allow-unauthenticated
+    "]
 
-  # Step 4: Trigger stock-prices-transformed service
-  - name: 'curlimages/curl'
-    args:
-      - '-X'
-      - 'POST'
-      - '-H'
-      - 'Authorization: Bearer $(gcloud auth print-identity-token)'
-      - '-H'
-      - 'Content-Type: application/json'
-      - '-d'
-      - '{"trigger": "true"}'
-      - 'https://stock-prices-transformed-184982369838.us-east1.run.app'
+images:
+  - 'us-central1-docker.pkg.dev/theta-function-429605-j0/my-repo/flask-app:$(SHORT_SHA)'
 
-  # Step 5: Trigger news-articles-preprocessing service
-  - name: 'curlimages/curl'
-    args:
-      - '-X'
-      - 'POST'
-      - '-H'
-      - 'Authorization: Bearer $(gcloud auth print-identity-token)'
-      - '-H'
-      - 'Content-Type: application/json'
-      - '-d'
-      - '{"trigger": "true"}'
-      - 'https://news-articles-preprocessing-184982369838.us-east1.run.app'
-
-  # Step 6: Trigger news-article-ingestion service
-  - name: 'curlimages/curl'
-    args:
-      - '-X'
-      - 'POST'
-      - '-H'
-      - 'Authorization: Bearer $(gcloud auth print-identity-token)'
-      - '-H'
-      - 'Content-Type: application/json'
-      - '-d'
-      - '{"trigger": "true"}'
-      - 'https://news-article-ingestion-184982369838.us-east1.run.app'
-
-  # Step 7: Trigger flask-application service
-  - name: 'curlimages/curl'
-    args:
-      - '-X'
-      - 'POST'
-      - '-H'
-      - 'Authorization: Bearer $(gcloud auth print-identity-token)'
-      - '-H'
-      - 'Content-Type: application/json'
-      - '-d'
-      - '{"trigger": "true"}'
-      - 'https://flask-application-184982369838.us-east1.run.app'
-
-  # Step 8: Trigger flask-app service
-  - name: 'curlimages/curl'
-    args:
-      - '-X'
-      - 'POST'
-      - '-H'
-      - 'Authorization: Bearer $(gcloud auth print-identity-token)'
-      - '-H'
-      - 'Content-Type: application/json'
-      - '-d'
-      - '{"trigger": "true"}'
-      - 'https://flask-app-184982369838.us-east1.run.app'
-
-  # Step 9: Trigger financial-chatbot service
-  - name: 'curlimages/curl'
-    args:
-      - '-X'
-      - 'POST'
-      - '-H'
-      - 'Authorization: Bearer $(gcloud auth print-identity-token)'
-      - '-H'
-      - 'Content-Type: application/json'
-      - '-d'
-      - '{"trigger": "true"}'
-      - 'https://financial-chatbot-184982369838.us-west1.run.app'
-
-  # Step 10: Trigger fetch-stock-data service
-  - name: 'curlimages/curl'
-    args:
-      - '-X'
-      - 'POST'
-      - '-H'
-      - 'Authorization: Bearer $(gcloud auth print-identity-token)'
-      - '-H'
-      - 'Content-Type: application/json'
-      - '-d'
-      - '{"trigger": "true"}'
-      - 'https://fetch-stock-data-184982369838.us-east1.run.app'
-
-  # Step 11: Trigger chatbot-ui service
-  - name: 'curlimages/curl'
-    args:
-      - '-X'
-      - 'POST'
-      - '-H'
-      - 'Authorization: Bearer $(gcloud auth print-identity-token)'
-      - '-H'
-      - 'Content-Type: application/json'
-      - '-d'
-      - '{"trigger": "true"}'
-      - 'https://chatbot-ui-184982369838.us-east1.run.app'
-
-  # Step 12: Trigger chatbot-container service
-  - name: 'curlimages/curl'
-    args:
-      - '-X'
-      - 'POST'
-      - '-H'
-      - 'Authorization: Bearer $(gcloud auth print-identity-token)'
-      - '-H'
-      - 'Content-Type: application/json'
-      - '-d'
-      - '{"trigger": "true"}'
-      - 'https://chatbot-container-184982369838.us-west1.run.app'
-
-timeout: "1200s" # Adjust timeout as needed
