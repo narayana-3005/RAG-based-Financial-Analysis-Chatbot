@@ -17,7 +17,6 @@ WORKDIR /app
 COPY ./Model_Pipeline/scripts /app/scripts
 COPY ./Model_Pipeline/scripts/requirements.txt /app/
 # Copy the service account key into the container
-COPY ./Model_Pipeline/scripts/theta-function-429605-j0-7e0753216ae2.json /app/credentials.json
 
 # Install Python dependencies from requirements.txt
 RUN pip install --no-cache-dir -r requirements.txt
