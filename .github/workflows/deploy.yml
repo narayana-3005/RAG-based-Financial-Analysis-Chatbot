@@ -33,7 +33,7 @@ jobs:
         # Specify the Artifact Registry path
         IMAGE_NAME="gcr.io/theta-function-429605-j0/flask-app:latest"
 
-        # Build the Docker image
+        # Build the Docker image from the correct directory
         docker build -t $IMAGE_NAME ./RAG-based-Financial-Analysis-Chatbot/Model_Pipeline/scripts
 
         # Authenticate Docker with Google Cloud Artifact Registry
