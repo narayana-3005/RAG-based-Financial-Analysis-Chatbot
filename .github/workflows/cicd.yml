@@ -1,0 +1,43 @@
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches: [ main ]
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    steps:
+      # Step 1: Checkout the code
+      - name: Checkout
+        uses: actions/checkout@v2
+
+      # Step 2: Setup gcloud CLI and Authenticate
+      - name: Set up Cloud SDK
+        uses: google-github-actions/setup-gcloud@v1
+        with:
+          project_id: theta-function-429605-j0
+          service_account_key: ${{ secrets.GCP_CREDENTIALS }}
+          export_default_credentials: true
+
+      # Step 3: Configure Docker to use Artifact Registry
+      - name: Configure Docker for Artifact Registry
+        run: gcloud auth configure-docker us-east1-docker.pkg.dev
+
+      # Step 4: Build the Docker image
+      - name: Build Docker image
+        run: |
+          docker build -t us-east1-docker.pkg.dev/theta-function-429605-j0/my-repo/flask-app:${{ github.sha }} .
+
+      # Step 5: Push the Docker image to Artifact Registry
+      - name: Push Docker image
+        run: docker push us-east1-docker.pkg.dev/theta-function-429605-j0/my-repo/flask-app:${{ github.sha }}
+
+      # Step 6: Deploy to Cloud Run
+      - name: Deploy to Cloud Run
+        run: |
+          gcloud run deploy my-app \
+            --image us-east1-docker.pkg.dev/theta-function-429605-j0/my-repo/flask-app:${{ github.sha }} \
+            --platform managed \
+            --region us-east1 \
+            --allow-unauthenticated
