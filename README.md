@@ -353,4 +353,4 @@ After the data is stored, the server forwards it to the model for processing. Th
 # Cost Analysis:
  Since we using GCP environment cost of resources are very low only application deployment server cost around 25$/months and for using efficient custom ChatGPT-4o fine tune model we require fined specific billing plan costing 5$/1M request hits. 
 
-
+rtest
