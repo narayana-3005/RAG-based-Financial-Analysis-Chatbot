@@ -25,5 +25,5 @@ RUN pip install --no-cache-dir -r requirements.txt
 EXPOSE 8085
 
 # Set the entrypoint command to start the Flask app using Gunicorn
-CMD ["gunicorn", "--bind", "0.0.0.0:8085", "--timeout", "300", "scripts.flask_app:app"]
+CMD ["gunicorn", "--bind", "0.0.0.0:8085", "--timeout", "500", "scripts.flask_app:app"]
 
