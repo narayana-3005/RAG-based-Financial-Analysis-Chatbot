@@ -30,18 +30,35 @@ jobs:
     # Step 4: Build and push Docker image to Artifact Registry
     - name: Build and push Docker image
       run: |
+        # Specify the Artifact Registry path
         IMAGE_NAME="gcr.io/theta-function-429605-j0/flask-app:latest"
-        docker build -t $IMAGE_NAME .
+
+        # Build the Docker image
+        docker build -t $IMAGE_NAME ./RAG-based-Financial-Analysis-Chatbot/Model_Pipeline/scripts
+
+        # Authenticate Docker with Google Cloud Artifact Registry
         gcloud auth configure-docker gcr.io
+
+        # Push the Docker image to Artifact Registry
         docker push $IMAGE_NAME
 
     # Step 5: Deploy to Cloud Run
     - name: Deploy to Cloud Run
       run: |
         IMAGE_NAME="gcr.io/theta-function-429605-j0/flask-app:latest"
+
+        # Deploy the Docker image to Cloud Run
         gcloud run deploy flask-app \
           --image $IMAGE_NAME \
           --region us-east1 \
           --platform managed \
           --allow-unauthenticated \
           --port 8085
+
+    # Step 6: Output the Cloud Run URL
+    - name: Fetch Cloud Run Service URL
+      run: |
+        SERVICE_URL=$(gcloud run services describe flask-app \
+          --region us-east1 \
+          --format "value(status.url)")
+        echo "Flask App deployed successfully! Access it here: $SERVICE_URL"
