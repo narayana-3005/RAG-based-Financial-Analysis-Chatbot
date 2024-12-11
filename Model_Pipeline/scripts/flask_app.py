@@ -18,6 +18,10 @@ from google.cloud import storage
 from datetime import datetime
 from openai import OpenAI
 import json
+import firebase_admin
+from firebase_admin import credentials
+from firebase_admin import db
+import requests
 
 # Set up logging
 logging.basicConfig(level=logging.INFO)
@@ -158,8 +162,19 @@ def download_from_gcp(bucket_name, source_folder, destination_folder):
 
         print(f"Downloaded {blob.name} to {local_path}")
 
+# Function to update counter
+def update_alert_counter():
+    try:
+      # Increment the count
+        current_count = ref.child('count').get() or 0
+        new_count = current_count + 1
+        ref.update({'count': new_count})
+    except Exception as e:
+        logger.info("Error updating counter: ", e)
+
 if __name__ != "__main__":
     try:
+        logger.info("Loading and initializing app configurations...")
         # Load API keys from config.json
         with open("config.json", "r") as config_file:
               config = json.load(config_file)
@@ -188,6 +203,15 @@ if __name__ != "__main__":
         documents_data = load_documents_data_from_gcs()
 
         logger.info("Models and tokenizers preloaded successfully.")
+
+        # Firebase db for counter
+        cred = credentials.Certificate(config.get("Firebase_Account_Key"))
+        firebase_admin.initialize_app(cred, {
+            'databaseURL': config.get("Firebase_DB_Url")
+        })
+        # counter for 'incorrect response' option click
+        ref = db.reference('/incorrect_response_counter')
+
     except Exception as e:
         logger.error(f"Error preloading models or tokenizers: {e}")
         raise e
@@ -214,12 +238,17 @@ def predict():
         logger.error(f"Error during prediction: {e}")
         return jsonify({"error": "An error occurred during prediction.", "details": str(e)}), 500
 
-
 # Health check endpoint
 @app.route("/health", methods=["GET"])
 def health_check():
     return jsonify({"status": "healthy"}), 200
 
+# Counter for user feedback of incorrect response
+@app.route('/increment_counter', methods=['POST'])
+def increment_counter():
+    update_alert_counter()
+    counter_value = ref.child('counter').get()
+    return jsonify({'counter': counter_value}), 200
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=8085)
