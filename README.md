@@ -255,7 +255,11 @@ This setup ensures that the financial chatbot's workflows and Airflow tasks rema
 
  
 # Model 
+<img width="1512" alt="Screenshot 2024-12-11 at 12 57 24 AM" src="https://github.com/user-attachments/assets/f82bb29f-297a-4a8d-b29a-bdda7abe64f1">
 
+<img width="1512" alt="Screenshot 2024-12-11 at 12 56 43 AM" src="https://github.com/user-attachments/assets/e4b7861c-5011-4899-a1d0-0d512ade1ce6">
+
+<img width="1278" alt="image" src="https://github.com/user-attachments/assets/4e1b4be9-7991-4da2-abd2-9b057565f272">
 
 Our model integrates advanced Large Language Model (LLM) capabilities with Retrieval-Augmented Generation (RAG) techniques to deliver real-time financial analyses and insights. Leveraging a combination of Dense Passage Retrieval (DPR) and Facebook AI Similarity Search (FAISS), the system ensures efficient document retrieval and precise QA generation. The architecture includes: 
 
@@ -274,7 +278,6 @@ This system’s robust and scalable architecture makes it ideal for real-time qu
 Model Components 
 - Fined Chatgpt-4o Model 
 - Facebook/dpr-reader-single-nq-base Model
-
 
 These are tasks that form the core of the model training pipeline, leveraging Retrieval-Augmented Generation (RAG) techniques to deliver high-performance financial analysis and insights. Below is a detailed overview of each task: 
 
@@ -353,4 +356,3 @@ After the data is stored, the server forwards it to the model for processing. Th
 # Cost Analysis:
  Since we using GCP environment cost of resources are very low only application deployment server cost around 25$/months and for using efficient custom ChatGPT-4o fine tune model we require fined specific billing plan costing 5$/1M request hits. 
 
-rtest
